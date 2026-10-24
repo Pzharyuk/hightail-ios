@@ -1,6 +1,6 @@
-# Getaway — example design
+# Hightail — example design
 
-A side-scrolling escape runner for iPhone. You do not finish by surviving an endless loop, and you do not finish by dying. Every stretch is a piece of the getaway. The game ends once, when you clear the last gate and the road in front of you is empty.
+A side-scrolling escape runner for iPhone. You do not finish by surviving an endless loop, and you do not finish by dying. Every stretch is one more block you put behind you. The game ends once, when you clear the last gate and the road in front of you is empty.
 
 Failure is a delay. Three hits restart the stretch you are on. Cleared stretches stay open. There is no bad ending.
 
@@ -29,13 +29,13 @@ Each stretch introduces at most one new read, then later stretches combine them 
 | 1 | Alley | Crate. Jump it. | 300 | Short runway, about 27s | Wide | No |
 | 2 | Dock | Rail. Slide, do not jump. | 345 | Longer | Tighter | No |
 | 3 | Yard | Stack. Taller and wider, jump earlier. | 390 | Longer | Tighter | No |
-| 4 | Viaduct | Gap. Stay in the air across missing ground. | 440 | Longer | Tighter | No |
+| 4 | Overpass | Gap. Stay in the air across missing ground. | 440 | Longer | Tighter | No |
 | 5 | Sweep | Sweeper. Read the bob. | 490 | Longer | Tighter | No |
 | 6 | Scaffold | Same set, now in pairs: jump, then slide. | 545 | Longer | Tighter | Yes |
-| 7 | Arterial | No new shape. Less road between mistakes. | 600 | Longer | Tight | Yes |
+| 7 | Highway | No new shape. Less road between mistakes. | 600 | Longer | Tight | Yes |
 | 8 | Bridge | All of it, then the longest quiet, then the gate. | 650 | Longest, about 35s | Tightest | Yes |
 
-Exact curves live in `Getaway/Game/LevelCatalog.swift`. Change a row there and the scene follows. Do not bury numbers in the spawner.
+Exact curves live in `Hightail/Game/LevelCatalog.swift`. Change a row there and the scene follows. Do not bury numbers in the spawner.
 
 Reaction time stays honest because obstacles enter from the right edge. At stretch 1 you see a crate for about two seconds. At stretch 8 you still get about a second, and a pair sits on screen together so the second obstacle is not a surprise pop-in.
 
@@ -70,8 +70,8 @@ No score attack. Forward is the only score. A tally would argue with the ending.
 ## Project shape
 
 ```
-Getaway/
-  GetawayApp.swift          window, dark, landscape app
+Hightail/
+  HightailApp.swift          window, dark, landscape app
   Game/LevelCatalog.swift   the eight stretches and the spawn rules
   Game/GameScene.swift      run, jump, slide, collide, gate
   UI/RootView.swift         map, HUD, clear, caught, escaped

@@ -15,10 +15,10 @@ final class GameModel: ObservableObject {
     @Published var unlocked: Int
     @Published var runID = UUID()
 
-    private let unlockKey = "getaway.unlocked"
+    private let unlockKey = "hightail.unlocked"
 
     init() {
-        let stored = UserDefaults.standard.integer(forKey: "getaway.unlocked")
+        let stored = UserDefaults.standard.integer(forKey: "hightail.unlocked")
         unlocked = stored == 0 ? 1 : min(LevelCatalog.count, max(1, stored))
     }
 
@@ -118,15 +118,15 @@ private struct MapScreen: View {
     var body: some View {
         HStack(alignment: .center, spacing: 28) {
             VStack(alignment: .leading, spacing: 14) {
-                Text("GETAWAY")
+                Text("HIGHTAIL")
                     .font(.system(size: 44, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.ivory)
-                Text("Eight stretches. Each one adds something to get wrong. The game ends when you are gone.")
+                Text("Eight runs. Each one gets meaner. You win when you get out.")
                     .font(.system(size: 16, weight: .regular, design: .rounded))
                     .foregroundStyle(Color.ivory.opacity(0.72))
                     .fixedSize(horizontal: false, vertical: true)
                 Button(action: { model.start(model.unlocked) }) {
-                    Text(model.unlocked == 1 ? "Run the alley" : "Continue")
+                    Text(model.unlocked == 1 ? "Hit the alley" : "Continue")
                         .font(.system(size: 17, weight: .bold, design: .rounded))
                         .foregroundStyle(Color.ink)
                         .frame(minWidth: 180, minHeight: 52)
@@ -393,7 +393,7 @@ private struct EscapedScreen: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("YOU GOT AWAY")
+            Text("YOU MADE IT")
                 .font(.system(size: 13, weight: .bold, design: .rounded))
                 .tracking(2)
                 .foregroundStyle(Color.escape)
@@ -405,7 +405,7 @@ private struct EscapedScreen: View {
                 .foregroundStyle(Color.ivory.opacity(0.72))
                 .frame(maxWidth: 520, alignment: .leading)
             Button(action: again) {
-                Text("Run the night again")
+                Text("Run it back")
                     .font(.system(size: 16, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.ink)
                     .frame(minWidth: 200, minHeight: 52)

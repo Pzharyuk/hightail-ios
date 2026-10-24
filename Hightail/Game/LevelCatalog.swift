@@ -75,7 +75,7 @@ enum LevelCatalog {
             kinds: [.crate, .stack, .rail], combos: false
         ),
         Spec(
-            name: "Viaduct",
+            name: "Overpass",
             blurb: "The ground goes missing.",
             hint: "Jump the gaps and stay in the air.",
             speed: 440, length: 13600, spacing: 540,
@@ -96,7 +96,7 @@ enum LevelCatalog {
             kinds: [.crate, .stack, .rail, .gap, .sweeper], combos: true
         ),
         Spec(
-            name: "Arterial",
+            name: "Highway",
             blurb: "Less road between mistakes.",
             hint: "Same problems. Less time.",
             speed: 600, length: 19600, spacing: 370,

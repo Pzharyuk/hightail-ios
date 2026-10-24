@@ -7,18 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A10000000000000000000001 /* GetawayApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* GetawayApp.swift */; };
+		A10000000000000000000001 /* HightailApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* HightailApp.swift */; };
 		A10000000000000000000002 /* LevelCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* LevelCatalog.swift */; };
 		A10000000000000000000003 /* GameScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* GameScene.swift */; };
 		A10000000000000000000004 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* RootView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A20000000000000000000001 /* GetawayApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetawayApp.swift; sourceTree = "<group>"; };
+		A20000000000000000000001 /* HightailApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HightailApp.swift; sourceTree = "<group>"; };
 		A20000000000000000000002 /* LevelCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelCatalog.swift; sourceTree = "<group>"; };
 		A20000000000000000000003 /* GameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameScene.swift; sourceTree = "<group>"; };
 		A20000000000000000000004 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		A20000000000000000000010 /* Getaway.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Getaway.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000010 /* Hightail.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Hightail.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -35,19 +35,19 @@
 		A40000000000000000000001 = {
 			isa = PBXGroup;
 			children = (
-				A40000000000000000000002 /* Getaway */,
+				A40000000000000000000002 /* Hightail */,
 				A40000000000000000000010 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		A40000000000000000000002 /* Getaway */ = {
+		A40000000000000000000002 /* Hightail */ = {
 			isa = PBXGroup;
 			children = (
-				A20000000000000000000001 /* GetawayApp.swift */,
+				A20000000000000000000001 /* HightailApp.swift */,
 				A40000000000000000000003 /* Game */,
 				A40000000000000000000004 /* UI */,
 			);
-			path = Getaway;
+			path = Hightail;
 			sourceTree = "<group>";
 		};
 		A40000000000000000000003 /* Game */ = {
@@ -70,7 +70,7 @@
 		A40000000000000000000010 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A20000000000000000000010 /* Getaway.app */,
+				A20000000000000000000010 /* Hightail.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -78,9 +78,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A50000000000000000000001 /* Getaway */ = {
+		A50000000000000000000001 /* Hightail */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A80000000000000000000003 /* Build configuration list for PBXNativeTarget "Getaway" */;
+			buildConfigurationList = A80000000000000000000003 /* Build configuration list for PBXNativeTarget "Hightail" */;
 			buildPhases = (
 				A60000000000000000000001 /* Sources */,
 				A30000000000000000000001 /* Frameworks */,
@@ -90,9 +90,9 @@
 			);
 			dependencies = (
 			);
-			name = Getaway;
-			productName = Getaway;
-			productReference = A20000000000000000000010 /* Getaway.app */;
+			name = Hightail;
+			productName = Hightail;
+			productReference = A20000000000000000000010 /* Hightail.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -109,7 +109,7 @@
 					};
 				};
 			};
-			buildConfigurationList = A80000000000000000000001 /* Build configuration list for PBXProject "Getaway" */;
+			buildConfigurationList = A80000000000000000000001 /* Build configuration list for PBXProject "Hightail" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -122,7 +122,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A50000000000000000000001 /* Getaway */,
+				A50000000000000000000001 /* Hightail */,
 			);
 		};
 /* End PBXProject section */
@@ -142,7 +142,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A10000000000000000000001 /* GetawayApp.swift in Sources */,
+				A10000000000000000000001 /* HightailApp.swift in Sources */,
 				A10000000000000000000002 /* LevelCatalog.swift in Sources */,
 				A10000000000000000000003 /* GameScene.swift in Sources */,
 				A10000000000000000000004 /* RootView.swift in Sources */,
@@ -192,7 +192,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Getaway;
+				INFOPLIST_KEY_CFBundleDisplayName = Hightail;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
@@ -204,7 +204,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = systems.onit.Getaway;
+				PRODUCT_BUNDLE_IDENTIFIER = systems.onit.Hightail;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -222,7 +222,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Getaway;
+				INFOPLIST_KEY_CFBundleDisplayName = Hightail;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
@@ -234,7 +234,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = systems.onit.Getaway;
+				PRODUCT_BUNDLE_IDENTIFIER = systems.onit.Hightail;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -247,7 +247,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A80000000000000000000001 /* Build configuration list for PBXProject "Getaway" */ = {
+		A80000000000000000000001 /* Build configuration list for PBXProject "Hightail" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A90000000000000000000001 /* Debug */,
@@ -256,7 +256,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A80000000000000000000003 /* Build configuration list for PBXNativeTarget "Getaway" */ = {
+		A80000000000000000000003 /* Build configuration list for PBXNativeTarget "Hightail" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A90000000000000000000003 /* Debug */,

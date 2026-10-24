@@ -51,7 +51,7 @@ final class GameScene: SKScene {
 
     @available(*, unavailable)
     required init?(coder aDecoder: NSCoder) {
-        fatalError("Getaway builds its scene in code")
+        fatalError("Hightail builds its scene in code")
     }
 
     override func didMove(to view: SKView) {

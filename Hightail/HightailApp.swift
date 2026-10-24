@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct GetawayApp: App {
+struct HightailApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()

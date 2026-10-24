@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "A50000000000000000000001"
-               BuildableName = "Getaway.app"
-               BlueprintName = "Getaway"
-               ReferencedContainer = "container:Getaway.xcodeproj">
+               BuildableName = "Hightail.app"
+               BlueprintName = "Hightail"
+               ReferencedContainer = "container:Hightail.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -44,9 +44,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A50000000000000000000001"
-            BuildableName = "Getaway.app"
-            BlueprintName = "Getaway"
-            ReferencedContainer = "container:Getaway.xcodeproj">
+            BuildableName = "Hightail.app"
+            BlueprintName = "Hightail"
+            ReferencedContainer = "container:Hightail.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -61,9 +61,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A50000000000000000000001"
-            BuildableName = "Getaway.app"
-            BlueprintName = "Getaway"
-            ReferencedContainer = "container:Getaway.xcodeproj">
+            BuildableName = "Hightail.app"
+            BlueprintName = "Hightail"
+            ReferencedContainer = "container:Hightail.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
