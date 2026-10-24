@@ -10,15 +10,17 @@ final class GameScene: SKScene {
     var onClear: (() -> Void)?
     var onCaught: (() -> Void)?
     var onJump: (() -> Void)?
+    var onRoll: (() -> Void)?
+    var onKnock: (() -> Void)?
     var onHit: (() -> Void)?
 
     private let world = SKNode()
     private let props = SKNode()
     private let runner = SKNode()
-    private let body = SKShapeNode(rectOf: CGSize(width: Stage.runWidth, height: Stage.runHeight), cornerRadius: 7)
-    private let head = SKShapeNode(circleOfRadius: 8)
-    private let scarf = SKShapeNode(rectOf: CGSize(width: 16, height: 6), cornerRadius: 2)
-    private let shadow = SKShapeNode(ellipseOf: CGSize(width: 32, height: 8))
+    private let body = SKShapeNode(rectOf: CGSize(width: Stage.runWidth, height: Stage.runHeight), cornerRadius: 5)
+    private let head = SKShapeNode(circleOfRadius: 5)
+    private let scarf = SKShapeNode(rectOf: CGSize(width: 10, height: 4), cornerRadius: 1)
+    private let shadow = SKShapeNode(ellipseOf: CGSize(width: 20, height: 5))
 
     private var ribbons: [Ribbon] = []
     private var hazards: [Hazard] = []
@@ -30,8 +32,8 @@ final class GameScene: SKScene {
     private var footY: CGFloat = Stage.groundY
     private var verticalVelocity: CGFloat = 0
     private var onGround = true
-    private var sliding = false
-    private var slideLeft: CGFloat = 0
+    private var rolling = false
+    private var rollLeft: CGFloat = 0
     private var distance: CGFloat = 0
     private var lives = 3
     private var invulnerable: CGFloat = 0
@@ -72,15 +74,18 @@ final class GameScene: SKScene {
     func jump() {
         guard running, onGround else { return }
         onGround = false
-        sliding = false
+        rolling = false
         verticalVelocity = Stage.jumpVelocity
         onJump?()
     }
 
-    func slide() {
-        guard running, onGround else { return }
-        sliding = true
-        slideLeft = 0.46
+    @discardableResult
+    func roll() -> Bool {
+        guard running, onGround else { return false }
+        rolling = true
+        rollLeft = 0.42
+        onRoll?()
+        return true
     }
 
     override func update(_ currentTime: TimeInterval) {
@@ -107,9 +112,9 @@ final class GameScene: SKScene {
                 onGround = true
             }
         }
-        if sliding {
-            slideLeft -= dt
-            if slideLeft <= 0 || !onGround { sliding = false }
+        if rolling {
+            rollLeft -= dt
+            if rollLeft <= 0 || !onGround { rolling = false }
         }
 
         let dx = stretch.speed * dt
@@ -151,6 +156,10 @@ final class GameScene: SKScene {
 
     private func syncHazards(_ time: TimeInterval) {
         for hazard in hazards {
+            if hazard.struck {
+                if hazard.node.parent == nil { hazard.gone = true }
+                if hazard.kind == .enemy { continue }
+            }
             let rect = hazard.rect(distance: distance, time: time)
             hazard.node.position = CGPoint(x: rect.midX, y: rect.midY)
             hazard.pole?.position = CGPoint(x: rect.midX, y: Stage.groundY + 78)
@@ -173,10 +182,27 @@ final class GameScene: SKScene {
             if hazard.kind == .gap && !onGround { continue }
             let box = hazard.rect(distance: distance, time: lastTime).insetBy(dx: 2, dy: 2)
             if body.intersects(box) {
-                strike(hazard)
-                if !running { return }
+                if rolling && hazard.kind == .enemy {
+                    knockDown(hazard)
+                } else {
+                    strike(hazard)
+                    if !running { return }
+                }
             }
         }
+    }
+
+    private func knockDown(_ hazard: Hazard) {
+        hazard.struck = true
+        hazard.node.run(.sequence([
+            .group([
+                .rotate(toAngle: -.pi / 2, duration: 0.14),
+                .moveBy(x: 48, y: 6, duration: 0.18),
+            ]),
+            .fadeOut(withDuration: 0.12),
+            .removeFromParent(),
+        ]))
+        onKnock?()
     }
 
     private func strike(_ hazard: Hazard) {
@@ -208,24 +234,32 @@ final class GameScene: SKScene {
     }
 
     private func runnerBox() -> CGRect {
-        let height = sliding ? Stage.slideHeight : Stage.runHeight
+        let height = rolling ? Stage.rollHeight : Stage.runHeight
+        let reach: CGFloat = rolling ? 12 : 0
         return CGRect(
             x: Stage.playerX - Stage.runWidth / 2,
             y: footY,
-            width: Stage.runWidth,
+            width: Stage.runWidth + reach,
             height: height
-        ).insetBy(dx: 4, dy: 1)
+        ).insetBy(dx: 2, dy: 1)
     }
 
     private func layoutRunner() {
-        let height = sliding ? Stage.slideHeight : Stage.runHeight
-        let bob: CGFloat = (onGround && !sliding) ? CGFloat(sin(Double(distance) * 0.045)) * 1.6 : 0
+        let height = rolling ? Stage.rollHeight : Stage.runHeight
+        let bob: CGFloat = (onGround && !rolling) ? CGFloat(sin(Double(distance) * 0.045)) * 1.2 : 0
         runner.position = CGPoint(x: Stage.playerX, y: footY)
-        body.position = CGPoint(x: 2, y: height / 2 + bob)
+        body.position = CGPoint(x: 1, y: height / 2 + bob)
         body.yScale = height / Stage.runHeight
-        body.xScale = sliding ? 1.28 : 1
-        head.isHidden = sliding
-        scarf.isHidden = sliding
+        body.xScale = rolling ? 1.35 : 1
+        body.fillColor = rolling ? Palette.sodium : Palette.ivory
+        if rolling {
+            let t = 1 - max(0, rollLeft) / 0.42
+            runner.zRotation = -t * .pi * 2
+        } else {
+            runner.zRotation = 0
+        }
+        head.isHidden = rolling
+        scarf.isHidden = rolling
         shadow.isHidden = !onGround
         shadow.alpha = onGround ? 0.35 : 0
     }
@@ -290,12 +324,12 @@ final class GameScene: SKScene {
         body.strokeColor = .clear
         scarf.fillColor = Palette.sodium
         scarf.strokeColor = .clear
-        scarf.position = CGPoint(x: 8, y: 30)
+        scarf.position = CGPoint(x: 5, y: 16)
         scarf.zRotation = -0.5
 
         head.fillColor = Palette.ivory
         head.strokeColor = .clear
-        head.position = CGPoint(x: 8, y: Stage.runHeight + 2)
+        head.position = CGPoint(x: 5, y: Stage.runHeight - 1)
         let eye = SKShapeNode(circleOfRadius: 1.6)
         eye.fillColor = Palette.ink
         eye.strokeColor = .clear
@@ -344,11 +378,11 @@ final class GameScene: SKScene {
 private enum Stage {
     static let groundY: CGFloat = 86
     static let playerX: CGFloat = 210
-    static let runHeight: CGFloat = 58
-    static let runWidth: CGFloat = 28
-    static let slideHeight: CGFloat = 26
-    static let gravity: CGFloat = -2400
-    static let jumpVelocity: CGFloat = 860
+    static let runHeight: CGFloat = 36
+    static let runWidth: CGFloat = 18
+    static let rollHeight: CGFloat = 14
+    static let gravity: CGFloat = -2100
+    static let jumpVelocity: CGFloat = 640
     static let sceneSize = CGSize(width: 844, height: 390)
 }
 
@@ -518,19 +552,21 @@ private final class Hazard {
         let left = Stage.playerX + (worldX - distance)
         switch kind {
         case .crate:
-            return CGRect(x: left, y: Stage.groundY, width: width, height: 52)
+            return CGRect(x: left, y: Stage.groundY, width: width, height: 34)
         case .stack:
-            return CGRect(x: left, y: Stage.groundY, width: width, height: 100)
+            return CGRect(x: left, y: Stage.groundY, width: width, height: 64)
+        case .enemy:
+            return CGRect(x: left, y: Stage.groundY, width: width, height: 32)
         case .rail:
-            // Opening is below y = ground + 34. The slab continues above the jump,
-            // so a jump always overlaps it and a slide always clears it.
-            return CGRect(x: left, y: Stage.groundY + 34, width: width, height: 210)
+            // Opening is below ground + 22. The slab continues above a jump,
+            // so a jump always overlaps it and a roll always clears it.
+            return CGRect(x: left, y: Stage.groundY + 22, width: width, height: 200)
         case .gap:
-            return CGRect(x: left, y: Stage.groundY - 8, width: width, height: 28)
+            return CGRect(x: left, y: Stage.groundY - 6, width: width, height: 22)
         case .sweeper:
             let bob = CGFloat(sin(time * 2.1 + Double(worldX) * 0.002))
-            let mid = Stage.groundY + 78 + bob * 22
-            return CGRect(x: left, y: mid - 12, width: width, height: 24)
+            let mid = Stage.groundY + 41 + bob * 12
+            return CGRect(x: left, y: mid - 11, width: width, height: 22)
         }
     }
 }
@@ -539,36 +575,58 @@ private enum HazardVisual {
     static func make(kind: ObstacleKind, width: CGFloat) -> (node: SKNode, pole: SKNode?) {
         switch kind {
         case .crate:
-            return (box(width: width, height: 52, stacked: false), nil)
+            return (box(width: width, height: 34, stacked: false), nil)
         case .stack:
-            return (box(width: width, height: 100, stacked: true), nil)
+            return (box(width: width, height: 64, stacked: true), nil)
+        case .enemy:
+            return (enemy(width: width), nil)
         case .rail:
             return (shutter(width: width), nil)
         case .gap:
-            let hole = SKShapeNode(rectOf: CGSize(width: width, height: 22), cornerRadius: 4)
+            let hole = SKShapeNode(rectOf: CGSize(width: width, height: 16), cornerRadius: 3)
             hole.fillColor = Palette.pit
             hole.strokeColor = Palette.curb
             hole.lineWidth = 2
             return (hole, nil)
         case .sweeper:
-            let pole = SKShapeNode(rectOf: CGSize(width: 4, height: 150))
+            let pole = SKShapeNode(rectOf: CGSize(width: 3, height: 120))
             pole.fillColor = SKColor(white: 0.22, alpha: 1)
             pole.strokeColor = .clear
-            return (bar(width: width, height: 24, color: Palette.sodium, chevrons: false), pole)
+            return (bar(width: width, height: 22, color: Palette.sodium, chevrons: false), pole)
         }
     }
 
     private static func shutter(width: CGFloat) -> SKNode {
         let node = SKNode()
-        let slab = SKShapeNode(rectOf: CGSize(width: width, height: 210), cornerRadius: 3)
+        let slab = SKShapeNode(rectOf: CGSize(width: width, height: 200), cornerRadius: 3)
         slab.fillColor = SKColor(red: 0.16, green: 0.18, blue: 0.22, alpha: 1)
         slab.strokeColor = .clear
         node.addChild(slab)
-        let lip = SKShapeNode(rectOf: CGSize(width: width, height: 8), cornerRadius: 2)
+        let lip = SKShapeNode(rectOf: CGSize(width: width, height: 6), cornerRadius: 2)
         lip.fillColor = Palette.sodium
         lip.strokeColor = .clear
-        lip.position = CGPoint(x: 0, y: -101)
+        lip.position = CGPoint(x: 0, y: -97)
         node.addChild(lip)
+        return node
+    }
+
+    private static func enemy(width: CGFloat) -> SKNode {
+        let node = SKNode()
+        let torso = SKShapeNode(rectOf: CGSize(width: max(14, width * 0.72), height: 20), cornerRadius: 4)
+        torso.fillColor = SKColor(red: 0.62, green: 0.18, blue: 0.16, alpha: 1)
+        torso.strokeColor = .clear
+        torso.position = CGPoint(x: 0, y: -4)
+        let head = SKShapeNode(circleOfRadius: 5.5)
+        head.fillColor = SKColor(red: 0.82, green: 0.28, blue: 0.22, alpha: 1)
+        head.strokeColor = .clear
+        head.position = CGPoint(x: 2, y: 10)
+        let visor = SKShapeNode(rectOf: CGSize(width: 7, height: 2), cornerRadius: 1)
+        visor.fillColor = Palette.sodium
+        visor.strokeColor = .clear
+        visor.position = CGPoint(x: 1, y: 0)
+        head.addChild(visor)
+        node.addChild(torso)
+        node.addChild(head)
         return node
     }
 

@@ -17,12 +17,12 @@ The design — what each stretch teaches, how the numbers stack, and what failur
 
 ## How to play
 
-You run on your own.
+You run on your own. Where you tap is the control.
 
-- Tap, or JUMP, to clear crates, stacks, and gaps.
-- Swipe down, or SLIDE, to go under rails.
-- Sweeper bars move. Run under them when they are high. Jump them when they are low.
+- Top half of the screen: jump. Clears crates, stacks, and gaps.
+- Bottom half: roll. Goes under rails, and knocks a guy in the lane onto his back.
+- Sweeper bars still move. Run under them when they are high. Jump them when they are low.
 
-Three hits restart the stretch. They do not end the game. The game ends when you cross the green gate on stretch 8.
+The runner is small on purpose. Three hits restart the stretch. They do not end the game. The game ends when you cross the green gate on stretch 8.
 
 Cleared stretches stay unlocked on this device.

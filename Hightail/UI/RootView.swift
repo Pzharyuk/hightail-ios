@@ -133,7 +133,7 @@ private struct MapScreen: View {
                         .background(Color.escape, in: Capsule())
                 }
                 .buttonStyle(.plain)
-                Text("Jump with the right thumb. Slide with the left. Or tap and swipe down.")
+                Text("Tap the top half to jump. Tap the bottom half to roll. A roll knocks a guy down.")
                     .font(.system(size: 13, weight: .medium, design: .rounded))
                     .foregroundStyle(Color.ivory.opacity(0.5))
             }
@@ -194,19 +194,23 @@ private struct PlaySession: View {
     @ObservedObject var model: GameModel
     @State private var scene: GameScene?
     private let jumpHaptic = UIImpactFeedbackGenerator(style: .light)
-    private let slideHaptic = UIImpactFeedbackGenerator(style: .soft)
+    private let rollHaptic = UIImpactFeedbackGenerator(style: .soft)
+    private let knockHaptic = UIImpactFeedbackGenerator(style: .rigid)
     private let hitHaptic = UINotificationFeedbackGenerator()
     private let clearHaptic = UINotificationFeedbackGenerator()
 
     var body: some View {
-        ZStack {
-            if let scene {
-                SpriteHost(scene: scene)
-                    .ignoresSafeArea()
-                Color.clear
-                    .contentShape(Rectangle())
-                    .gesture(gesture(scene))
-                hud(scene)
+        GeometryReader { geo in
+            ZStack {
+                if let scene {
+                    SpriteHost(scene: scene)
+                        .ignoresSafeArea()
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .gesture(gesture(scene, height: geo.size.height))
+                    zoneLabels
+                    hud
+                }
             }
         }
         .onAppear(perform: boot)
@@ -215,7 +219,8 @@ private struct PlaySession: View {
     private func boot() {
         guard scene == nil else { return }
         jumpHaptic.prepare()
-        slideHaptic.prepare()
+        rollHaptic.prepare()
+        knockHaptic.prepare()
         let next = GameScene(stretch: model.stretch)
         next.onProgress = { progress, lives in
             DispatchQueue.main.async {
@@ -223,6 +228,8 @@ private struct PlaySession: View {
             }
         }
         next.onJump = { jumpHaptic.impactOccurred() }
+        next.onRoll = { rollHaptic.impactOccurred() }
+        next.onKnock = { knockHaptic.impactOccurred() }
         next.onHit = { hitHaptic.notificationOccurred(.error) }
         next.onClear = {
             clearHaptic.notificationOccurred(.success)
@@ -234,18 +241,31 @@ private struct PlaySession: View {
         scene = next
     }
 
-    private func gesture(_ scene: GameScene) -> some Gesture {
+    private func gesture(_ scene: GameScene, height: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 0).onEnded { value in
-            if value.translation.height > 26 {
-                scene.slide()
-                slideHaptic.impactOccurred()
-            } else {
+            if value.location.y < height * 0.5 {
                 scene.jump()
+            } else {
+                scene.roll()
             }
         }
     }
 
-    private func hud(_ scene: GameScene) -> some View {
+    private var zoneLabels: some View {
+        VStack {
+            Text("JUMP")
+                .padding(.top, 34)
+            Spacer()
+            Text(model.stretch.index >= 5 ? "ROLL  ·  KNOCKS THEM DOWN" : "ROLL")
+                .padding(.bottom, 16)
+        }
+        .font(.system(size: 11, weight: .bold, design: .rounded))
+        .tracking(1.6)
+        .foregroundStyle(Color.ivory.opacity(model.progress < 0.22 ? 0.55 : 0.18))
+        .allowsHitTesting(false)
+    }
+
+    private var hud: some View {
         VStack(spacing: 8) {
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -257,37 +277,30 @@ private struct PlaySession: View {
                         .font(.system(size: 13, weight: .medium, design: .rounded))
                         .foregroundStyle(Color.ivory.opacity(0.9))
                 }
+                .allowsHitTesting(false)
                 Spacer()
                 HStack(spacing: 6) {
                     ForEach(0..<3, id: \.self) { index in
                         Circle()
                             .fill(index < model.lives ? Color.sodium : Color.white.opacity(0.15))
-                            .frame(width: 10, height: 10)
+                            .frame(width: 8, height: 8)
                     }
                 }
+                .allowsHitTesting(false)
                 Button(action: model.toMap) {
                     Text("Leave")
                         .font(.system(size: 13, weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.ivory.opacity(0.75))
-                        .frame(minWidth: 44, minHeight: 44)
+                        .frame(minWidth: 44, minHeight: 36)
                 }
                 .buttonStyle(.plain)
             }
             progressBar
+                .allowsHitTesting(false)
             Spacer()
-            HStack {
-                RoadButton(title: "SLIDE", fill: .sodium) {
-                    scene.slide()
-                    slideHaptic.impactOccurred()
-                }
-                Spacer()
-                RoadButton(title: "JUMP", fill: .ivory) {
-                    scene.jump()
-                }
-            }
         }
         .padding(.horizontal, 22)
-        .padding(.vertical, 10)
+        .padding(.vertical, 8)
     }
 
     private var progressBar: some View {
@@ -320,24 +333,6 @@ private struct SpriteHost: UIViewRepresentable {
         if view.scene !== scene {
             view.presentScene(scene)
         }
-    }
-}
-
-private struct RoadButton: View {
-    let title: String
-    let fill: Color
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 15, weight: .bold, design: .rounded))
-                .tracking(1.4)
-                .foregroundStyle(Color.ink)
-                .frame(minWidth: 112, minHeight: 52)
-                .background(fill, in: Capsule())
-        }
-        .buttonStyle(.plain)
     }
 }
 

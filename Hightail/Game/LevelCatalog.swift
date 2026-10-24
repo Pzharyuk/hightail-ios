@@ -8,6 +8,7 @@ enum ObstacleKind: String {
     case rail
     case gap
     case sweeper
+    case enemy
 }
 
 struct ObstacleSpawn {
@@ -56,14 +57,14 @@ enum LevelCatalog {
         Spec(
             name: "Alley",
             blurb: "One kind of problem.",
-            hint: "Tap to jump the crates.",
+            hint: "Tap the top half of the screen to jump.",
             speed: 300, length: 8600, spacing: 860,
             kinds: [.crate], combos: false
         ),
         Spec(
             name: "Dock",
             blurb: "Rails over the lane.",
-            hint: "Swipe down to slide. Don't jump the rails.",
+            hint: "Tap the bottom half to roll. Don't jump the rails.",
             speed: 345, length: 10200, spacing: 700,
             kinds: [.crate, .rail], combos: false
         ),
@@ -83,31 +84,31 @@ enum LevelCatalog {
         ),
         Spec(
             name: "Sweep",
-            blurb: "The bar breathes.",
-            hint: "High bar: run under it. Low bar: jump.",
+            blurb: "Guys in the lane.",
+            hint: "Roll through them. They go down.",
             speed: 490, length: 15400, spacing: 480,
-            kinds: [.crate, .rail, .sweeper, .gap], combos: false
+            kinds: [.crate, .enemy, .rail, .sweeper, .gap], combos: false
         ),
         Spec(
             name: "Scaffold",
             blurb: "They come in pairs now.",
-            hint: "Jump, then slide. Read both before you commit.",
+            hint: "Jump, then roll. A roll drops the guys.",
             speed: 545, length: 17200, spacing: 430,
-            kinds: [.crate, .stack, .rail, .gap, .sweeper], combos: true
+            kinds: [.crate, .enemy, .stack, .rail, .gap, .sweeper], combos: true
         ),
         Spec(
             name: "Highway",
             blurb: "Less road between mistakes.",
             hint: "Same problems. Less time.",
             speed: 600, length: 19600, spacing: 370,
-            kinds: [.crate, .stack, .rail, .sweeper, .gap], combos: true
+            kinds: [.enemy, .crate, .stack, .rail, .sweeper, .gap], combos: true
         ),
         Spec(
             name: "Bridge",
             blurb: "Everything. Then the gate.",
-            hint: "Get through it. The quiet means you're close.",
+            hint: "Roll the guys. Jump the rest. The quiet means you're close.",
             speed: 650, length: 23000, spacing: 320,
-            kinds: [.crate, .stack, .rail, .sweeper, .gap], combos: true
+            kinds: [.enemy, .crate, .stack, .rail, .sweeper, .gap], combos: true
         ),
     ]
 
@@ -150,10 +151,11 @@ enum LevelCatalog {
 
     private static func width(_ kind: ObstacleKind, index: Int, speed: CGFloat) -> CGFloat {
         switch kind {
-        case .crate: return 48
-        case .stack: return 84
-        case .rail: return 92
-        case .sweeper: return 74
+        case .crate: return 34
+        case .stack: return 52
+        case .enemy: return 28
+        case .rail: return 64
+        case .sweeper: return 52
         case .gap:
             let want = 130 + CGFloat(max(0, index - 4)) * 22
             return min(want, speed * 0.46)

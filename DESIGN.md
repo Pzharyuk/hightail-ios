@@ -12,8 +12,8 @@ You are already out of the building. What is left is eight stretches of road bet
 
 The runner holds a fixed spot on the left third of a landscape screen and moves forward on their own. The road comes at them.
 
-- **Jump** (tap, or the JUMP button) clears crates, stacks, and gaps.
-- **Slide** (swipe down, or the SLIDE button) goes under rails. A rail is a slab that starts just above a slide and keeps going past the top of a jump, so hopping it never works.
+- **Jump** (tap the top half of the screen) clears crates, stacks, and gaps.
+- **Roll** (tap the bottom half) is the attack. It ducks under rails, and if it hits a guy in the lane he goes down instead of taking a heart. Running into him upright still costs you.
 - **Sweeper** bars rise and fall. Run under a high bar. Jump a low one.
 
 A hit breaks that obstacle, costs one of three chances, and gives a short invulnerable beat so a cluster cannot stunlock you. At zero chances the stretch resets. The exit does not move.
@@ -27,11 +27,11 @@ Each stretch introduces at most one new read, then later stretches combine them 
 | Stretch | Name | New read | Speed | Road | Spacing | Pairs |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Alley | Crate. Jump it. | 300 | Short runway, about 27s | Wide | No |
-| 2 | Dock | Rail. Slide, do not jump. | 345 | Longer | Tighter | No |
+| 2 | Dock | Rail. Roll, do not jump. | 345 | Longer | Tighter | No |
 | 3 | Yard | Stack. Taller and wider, jump earlier. | 390 | Longer | Tighter | No |
 | 4 | Overpass | Gap. Stay in the air across missing ground. | 440 | Longer | Tighter | No |
-| 5 | Sweep | Sweeper. Read the bob. | 490 | Longer | Tighter | No |
-| 6 | Scaffold | Same set, now in pairs: jump, then slide. | 545 | Longer | Tighter | Yes |
+| 5 | Sweep | Enemy. Roll through him and he drops. | 490 | Longer | Tighter | No |
+| 6 | Scaffold | Same set, now in pairs: jump, then roll. | 545 | Longer | Tighter | Yes |
 | 7 | Highway | No new shape. Less road between mistakes. | 600 | Longer | Tight | Yes |
 | 8 | Bridge | All of it, then the longest quiet, then the gate. | 650 | Longest, about 35s | Tightest | Yes |
 
@@ -43,13 +43,13 @@ Jump height clears a stack with room. It does not clear a rail. Gap widths stay 
 
 ## Controls
 
-Landscape only. Two thumbs, no tilt.
+Landscape only. No buttons on the road. The screen is split in half.
 
-- Right thumb: jump.
-- Left thumb: slide.
-- The same gestures work anywhere on the road, so a player who never sees the buttons still learns.
+- Top half: jump.
+- Bottom half: roll. That is the attack.
+- A faint JUMP / ROLL label sits on the glass until the stretch is underway, then it fades. It does not catch taps.
 
-Stretch 1's hint only mentions jumping. Slide is taught when the first rail exists, not before.
+Stretch 1 only asks for a jump. The roll is taught when the first rail shows up. Knocking a guy down is taught on stretch 5, the first time one is in the lane.
 
 ## Session shape
 
@@ -73,7 +73,7 @@ No score attack. Forward is the only score. A tally would argue with the ending.
 Hightail/
   HightailApp.swift          window, dark, landscape app
   Game/LevelCatalog.swift   the eight stretches and the spawn rules
-  Game/GameScene.swift      run, jump, slide, collide, gate
+  Game/GameScene.swift      run, jump, roll, collide, gate
   UI/RootView.swift         map, HUD, clear, caught, escaped
 ```
 
@@ -85,7 +85,8 @@ Sound, a real runner sheet, dust, and a second lane. Add those after the eight s
 
 ## Fairness checks already in the scene
 
-- You cannot jump a rail. You can always slide it.
+- You cannot jump a rail. You can always roll it.
+- A roll that touches an enemy knocks him down and does not cost a heart. Upright contact does.
 - A stack is taller than a crate and still under the jump apex.
 - Gaps are narrower than the air time at that stretch's speed.
 - The last 2.4 seconds of every stretch are empty on purpose.
