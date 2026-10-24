@@ -12,9 +12,9 @@ You are already out of the building. What is left is eight stretches of road bet
 
 The runner holds a fixed spot on the left third of a landscape screen and moves forward on their own. The road comes at them.
 
-- **Jump** (tap the top half of the screen) clears crates, stacks, and gaps.
-- **Roll** (tap the bottom half) is the attack. It ducks under rails, and if it hits a guy in the lane he goes down instead of taking a heart. Running into him upright still costs you.
-- **Sweeper** bars rise and fall. Run under a high bar. Jump a low one.
+- **Jump** (top half). Tap and let go for a short hop. Hold for a long jump. Tap again in the air for a second jump. Letting go while you are still rising cuts the arc.
+- **Roll** (bottom half). Hold to tuck and speed up. The tuck eases in and out. If you roll off a gap, gravity keeps you falling until you land. Let go and you stand back up only after you are on the ground.
+- **Animals** stay on all fours and bound. Jump on a back for 100. A fast roll through one pays 350. Running into one upright costs a heart.
 
 A hit breaks that obstacle, costs one of three chances, and gives a short invulnerable beat so a cluster cannot stunlock you. At zero chances the stretch resets. The exit does not move.
 
@@ -43,11 +43,11 @@ Jump height clears a stack with room. It does not clear a rail. Gap widths stay 
 
 ## Controls
 
-Landscape only. No buttons on the road. The screen is split in half.
+Landscape only. No buttons on the road. The screen is split in half, and holding is different from a tap.
 
-- Top half: jump.
-- Bottom half: roll. That is the attack.
-- A faint JUMP / ROLL label sits on the glass until the stretch is underway, then it fades. It does not catch taps.
+- Top half: jump. Release early to cut it. Hold to stay light on the way up. A second tap in the air spends the extra jump.
+- Bottom half: roll. Hold to keep the tuck and to run fast. That fast roll is the high score.
+- Labels on the glass do not catch taps.
 
 Stretch 1 only asks for a jump. The roll is taught when the first rail shows up. Knocking a guy down is taught on stretch 5, the first time one is in the lane.
 

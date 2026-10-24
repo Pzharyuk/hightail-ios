@@ -19,9 +19,9 @@ The design — what each stretch teaches, how the numbers stack, and what failur
 
 You run on your own. Where you tap is the control.
 
-- Top half of the screen: jump. Clears crates, stacks, and gaps.
-- Bottom half: roll. Goes under rails, and knocks a guy in the lane onto his back.
-- Sweeper bars still move. Run under them when they are high. Jump them when they are low.
+- Top half: jump. A quick tap is a short hop. Hold for a long Mario jump, or tap again in the air.
+- Bottom half: roll. Hold it and you stay tucked. If you roll off a gap, gravity keeps you falling. Let go and you open back up when you land.
+- Animals run on all fours. Jump on their backs for 100. Hold a fast roll into them for 350.
 
 The runner is small on purpose. Three hits restart the stretch. They do not end the game. The game ends when you cross the green gate on stretch 8.
 

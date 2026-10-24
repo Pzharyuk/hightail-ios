@@ -57,14 +57,14 @@ enum LevelCatalog {
         Spec(
             name: "Alley",
             blurb: "One kind of problem.",
-            hint: "Tap the top half of the screen to jump.",
+            hint: "Hold the top for a long jump. Tap again in the air.",
             speed: 300, length: 8600, spacing: 860,
             kinds: [.crate], combos: false
         ),
         Spec(
             name: "Dock",
             blurb: "Rails over the lane.",
-            hint: "Tap the bottom half to roll. Don't jump the rails.",
+            hint: "Hold the bottom to roll. Gravity keeps the tuck if you leave the ground.",
             speed: 345, length: 10200, spacing: 700,
             kinds: [.crate, .rail], combos: false
         ),
@@ -84,15 +84,15 @@ enum LevelCatalog {
         ),
         Spec(
             name: "Sweep",
-            blurb: "Guys in the lane.",
-            hint: "Roll through them. They go down.",
+            blurb: "Animals on all fours.",
+            hint: "Jump on their backs for 100. A fast roll pays 350.",
             speed: 490, length: 15400, spacing: 480,
             kinds: [.crate, .enemy, .rail, .sweeper, .gap], combos: false
         ),
         Spec(
             name: "Scaffold",
             blurb: "They come in pairs now.",
-            hint: "Jump, then roll. A roll drops the guys.",
+            hint: "Jump, then roll. Hold the roll and it pays extra.",
             speed: 545, length: 17200, spacing: 430,
             kinds: [.crate, .enemy, .stack, .rail, .gap, .sweeper], combos: true
         ),
@@ -153,7 +153,7 @@ enum LevelCatalog {
         switch kind {
         case .crate: return 34
         case .stack: return 52
-        case .enemy: return 28
+        case .enemy: return 50
         case .rail: return 64
         case .sweeper: return 52
         case .gap:

@@ -6,13 +6,14 @@ import UIKit
 final class GameScene: SKScene {
     let stretch: Stretch
 
-    var onProgress: ((CGFloat, Int) -> Void)?
+    var onProgress: ((CGFloat, Int, Int) -> Void)?
     var onClear: (() -> Void)?
     var onCaught: (() -> Void)?
     var onJump: (() -> Void)?
     var onRoll: (() -> Void)?
     var onKnock: (() -> Void)?
     var onHit: (() -> Void)?
+    var onScore: ((Int) -> Void)?
 
     private let world = SKNode()
     private let props = SKNode()
@@ -33,7 +34,15 @@ final class GameScene: SKScene {
     private var verticalVelocity: CGFloat = 0
     private var onGround = true
     private var rolling = false
-    private var rollLeft: CGFloat = 0
+    private var rollHeld = false
+    private var rollBlend: CGFloat = 0
+    private var spin: CGFloat = 0
+    private var jumpHeld = false
+    private var airJumps = 1
+    private var coyote: CGFloat = 0.12
+    private var touchActive = false
+    private var fastRolling = false
+    private var score = 0
     private var distance: CGFloat = 0
     private var lives = 3
     private var invulnerable: CGFloat = 0
@@ -71,21 +80,54 @@ final class GameScene: SKScene {
         layMoon()
     }
 
-    func jump() {
-        guard running, onGround else { return }
+    func beginTouch(jumpZone: Bool) {
+        guard running, !touchActive else { return }
+        touchActive = true
+        if jumpZone {
+            rollHeld = false
+            jumpHeld = true
+            pressJump()
+        } else {
+            jumpHeld = false
+            pressRoll()
+        }
+    }
+
+    func endTouch() {
+        guard touchActive else { return }
+        touchActive = false
+        if jumpHeld && verticalVelocity > 80 {
+            verticalVelocity *= 0.75
+        }
+        jumpHeld = false
+        rollHeld = false
+    }
+
+    func restoreScore(_ value: Int) {
+        score = value
+    }
+
+    private func pressJump() {
+        guard running else { return }
+        let grounded = onGround || coyote > 0
+        guard grounded || airJumps > 0 else { return }
+        if grounded {
+            airJumps = 1
+        } else {
+            airJumps -= 1
+        }
         onGround = false
+        coyote = 0
         rolling = false
         verticalVelocity = Stage.jumpVelocity
         onJump?()
     }
 
-    @discardableResult
-    func roll() -> Bool {
-        guard running, onGround else { return false }
+    private func pressRoll() {
+        guard running else { return }
         rolling = true
-        rollLeft = 0.42
+        rollHeld = true
         onRoll?()
-        return true
     }
 
     override func update(_ currentTime: TimeInterval) {
@@ -103,21 +145,22 @@ final class GameScene: SKScene {
         if invulnerable > 0 { invulnerable -= dt }
         runner.alpha = (invulnerable > 0 && Int(invulnerable * 14) % 2 == 0) ? 0.35 : 1
 
-        if !onGround {
-            verticalVelocity += Stage.gravity * dt
-            footY += verticalVelocity * dt
-            if footY <= Stage.groundY {
-                footY = Stage.groundY
-                verticalVelocity = 0
-                onGround = true
-            }
-        }
-        if rolling {
-            rollLeft -= dt
-            if rollLeft <= 0 || !onGround { rolling = false }
-        }
+        integrate(dt, time: time)
 
-        let dx = stretch.speed * dt
+        if rollHeld {
+            rolling = true
+        } else if onGround {
+            rolling = false
+        }
+        let blendTarget: CGFloat = rolling ? 1 : 0
+        rollBlend += (blendTarget - rollBlend) * min(1, dt * 10)
+
+        fastRolling = rolling && rollHeld && onGround
+        let boost: CGFloat = fastRolling ? Stage.fastRoll : 1
+        let dx = stretch.speed * boost * dt
+        if rollBlend > 0.08 {
+            spin += dx / 12
+        }
         distance += dx
         for ribbon in ribbons { ribbon.step(dx) }
         spawn()
@@ -130,9 +173,78 @@ final class GameScene: SKScene {
             return
         }
         if invulnerable <= 0 {
-            collide()
+            collide(time)
         }
         report(dt)
+    }
+
+    /// Gravity always wins. Holding jump lightens it on the way up, like Mario.
+    /// A roll stays tucked in the air and falls. Gaps are real holes.
+    private func integrate(_ dt: CGFloat, time: TimeInterval) {
+        if onGround, let gap = openGap(time) {
+            onGround = false
+            if verticalVelocity > -50 { verticalVelocity = -50 }
+            _ = gap
+        }
+
+        if !onGround {
+            let rising = verticalVelocity > 0 && jumpHeld
+            let g = rising ? Stage.holdGravity : Stage.gravity
+            verticalVelocity += g * dt
+            if verticalVelocity < -980 { verticalVelocity = -980 }
+            footY += verticalVelocity * dt
+            if let gap = openGap(time), footY < Stage.groundY {
+                if footY < Stage.groundY - 72 {
+                    fall(into: gap)
+                    return
+                }
+            } else if footY <= Stage.groundY {
+                footY = Stage.groundY
+                verticalVelocity = 0
+                onGround = true
+                airJumps = 1
+            }
+        }
+
+        if onGround {
+            coyote = 0.12
+        } else {
+            coyote = max(0, coyote - dt)
+        }
+    }
+
+    private func openGap(_ time: TimeInterval) -> Hazard? {
+        for hazard in hazards where hazard.kind == .gap && !hazard.struck {
+            let rect = hazard.rect(distance: distance, time: time)
+            if Stage.playerX > rect.minX + 8 && Stage.playerX < rect.maxX - 8 {
+                return hazard
+            }
+        }
+        return nil
+    }
+
+    private func fall(into gap: Hazard) {
+        lives -= 1
+        footY = Stage.groundY
+        verticalVelocity = 0
+        onGround = true
+        rolling = false
+        rollHeld = false
+        jumpHeld = false
+        touchActive = false
+        airJumps = 1
+        invulnerable = 1.05
+        let target = max(0, gap.worldX - 110)
+        let rewind = distance - target
+        distance = target
+        for ribbon in ribbons { ribbon.step(-rewind) }
+        shake = 0.14
+        onHit?()
+        reportNow()
+        if lives <= 0 {
+            running = false
+            onCaught?()
+        }
     }
 
     private func spawn() {
@@ -162,7 +274,14 @@ final class GameScene: SKScene {
             }
             let rect = hazard.rect(distance: distance, time: time)
             hazard.node.position = CGPoint(x: rect.midX, y: rect.midY)
-            hazard.pole?.position = CGPoint(x: rect.midX, y: Stage.groundY + 78)
+            hazard.pole?.position = CGPoint(x: rect.midX, y: Stage.groundY + 70)
+            if hazard.kind == .enemy && !hazard.struck {
+                let phase = CGFloat(sin(time * 8 + Double(hazard.worldX) * 0.015))
+                hazard.node.childNode(withName: "front")?.zRotation = phase * 0.55
+                hazard.node.childNode(withName: "front2")?.zRotation = phase * 0.55
+                hazard.node.childNode(withName: "hind")?.zRotation = -phase * 0.55
+                hazard.node.childNode(withName: "hind2")?.zRotation = -phase * 0.55
+            }
             if rect.maxX < -100 {
                 hazard.node.removeFromParent()
                 hazard.pole?.removeFromParent()
@@ -176,33 +295,77 @@ final class GameScene: SKScene {
         }
     }
 
-    private func collide() {
+    private func collide(_ time: TimeInterval) {
         let body = runnerBox()
         for hazard in hazards where !hazard.struck {
-            if hazard.kind == .gap && !onGround { continue }
-            let box = hazard.rect(distance: distance, time: lastTime).insetBy(dx: 2, dy: 2)
-            if body.intersects(box) {
-                if rolling && hazard.kind == .enemy {
-                    knockDown(hazard)
+            if hazard.kind == .gap { continue }
+            let box = hazard.rect(distance: distance, time: time).insetBy(dx: 2, dy: 2)
+            guard body.intersects(box) else { continue }
+            if hazard.kind == .enemy {
+                let feet = body.minY
+                let stomped = !rolling && verticalVelocity < 0 && feet <= box.maxY + 8 && feet >= box.maxY - 22
+                if stomped {
+                    defeat(hazard, points: 100, stomp: true, surface: box.maxY)
+                } else if rolling && rollBlend > 0.45 {
+                    let points = fastRolling ? 350 : 200
+                    defeat(hazard, points: points, stomp: false, surface: box.maxY)
                 } else {
                     strike(hazard)
                     if !running { return }
                 }
+            } else {
+                strike(hazard)
+                if !running { return }
             }
         }
     }
 
-    private func knockDown(_ hazard: Hazard) {
+    private func defeat(_ hazard: Hazard, points: Int, stomp: Bool, surface: CGFloat) {
         hazard.struck = true
-        hazard.node.run(.sequence([
+        if stomp {
+            footY = max(footY, surface + 1)
+            verticalVelocity = Stage.jumpVelocity * (jumpHeld ? 0.82 : 0.58)
+            onGround = false
+            hazard.node.run(.sequence([
+                .group([
+                    .scaleY(to: 0.35, duration: 0.07),
+                    .moveBy(x: 8, y: -3, duration: 0.07),
+                ]),
+                .fadeOut(withDuration: 0.16),
+                .removeFromParent(),
+            ]))
+        } else {
+            hazard.node.run(.sequence([
+                .group([
+                    .rotate(toAngle: -0.45, duration: 0.12),
+                    .moveBy(x: 64, y: 2, duration: 0.16),
+                    .scaleY(to: 0.75, duration: 0.08),
+                ]),
+                .fadeOut(withDuration: 0.14),
+                .removeFromParent(),
+            ]))
+        }
+        addScore(points, at: hazard.node.position)
+        onKnock?()
+    }
+
+    private func addScore(_ points: Int, at position: CGPoint) {
+        score += points
+        onScore?(score)
+        let label = SKLabelNode(text: "+\(points)")
+        label.fontName = "AvenirNext-Bold"
+        label.fontSize = 13
+        label.fontColor = points >= 300 ? Palette.sodium : Palette.ivory
+        label.position = CGPoint(x: position.x, y: position.y + 16)
+        label.zPosition = 30
+        world.addChild(label)
+        label.run(.sequence([
             .group([
-                .rotate(toAngle: -.pi / 2, duration: 0.14),
-                .moveBy(x: 48, y: 6, duration: 0.18),
+                .moveBy(x: 0, y: 26, duration: 0.45),
+                .fadeOut(withDuration: 0.45),
             ]),
-            .fadeOut(withDuration: 0.12),
             .removeFromParent(),
         ]))
-        onKnock?()
     }
 
     private func strike(_ hazard: Hazard) {
@@ -234,8 +397,8 @@ final class GameScene: SKScene {
     }
 
     private func runnerBox() -> CGRect {
-        let height = rolling ? Stage.rollHeight : Stage.runHeight
-        let reach: CGFloat = rolling ? 12 : 0
+        let height = Stage.runHeight - (Stage.runHeight - Stage.rollHeight) * rollBlend
+        let reach: CGFloat = rollBlend > 0.5 ? 12 : 0
         return CGRect(
             x: Stage.playerX - Stage.runWidth / 2,
             y: footY,
@@ -245,21 +408,16 @@ final class GameScene: SKScene {
     }
 
     private func layoutRunner() {
-        let height = rolling ? Stage.rollHeight : Stage.runHeight
-        let bob: CGFloat = (onGround && !rolling) ? CGFloat(sin(Double(distance) * 0.045)) * 1.2 : 0
+        let height = Stage.runHeight - (Stage.runHeight - Stage.rollHeight) * rollBlend
+        let bob: CGFloat = (onGround && rollBlend < 0.2) ? CGFloat(sin(Double(distance) * 0.045)) * 1.2 : 0
         runner.position = CGPoint(x: Stage.playerX, y: footY)
         body.position = CGPoint(x: 1, y: height / 2 + bob)
         body.yScale = height / Stage.runHeight
-        body.xScale = rolling ? 1.35 : 1
-        body.fillColor = rolling ? Palette.sodium : Palette.ivory
-        if rolling {
-            let t = 1 - max(0, rollLeft) / 0.42
-            runner.zRotation = -t * .pi * 2
-        } else {
-            runner.zRotation = 0
-        }
-        head.isHidden = rolling
-        scarf.isHidden = rolling
+        body.xScale = 1 + rollBlend * 0.35
+        body.fillColor = fastRolling ? Palette.sodium : Palette.ivory
+        runner.zRotation = rollBlend > 0.08 ? -spin : 0
+        head.alpha = 1 - rollBlend
+        scarf.alpha = 1 - rollBlend
         shadow.isHidden = !onGround
         shadow.alpha = onGround ? 0.35 : 0
     }
@@ -284,7 +442,7 @@ final class GameScene: SKScene {
 
     private func reportNow() {
         reportWait = 0.08
-        onProgress?(min(1, distance / stretch.length), lives)
+        onProgress?(min(1, distance / stretch.length), lives, score)
     }
 
     private func laySky() {
@@ -381,8 +539,10 @@ private enum Stage {
     static let runHeight: CGFloat = 36
     static let runWidth: CGFloat = 18
     static let rollHeight: CGFloat = 14
-    static let gravity: CGFloat = -2100
-    static let jumpVelocity: CGFloat = 640
+    static let gravity: CGFloat = -2600
+    static let holdGravity: CGFloat = -1350
+    static let jumpVelocity: CGFloat = 620
+    static let fastRoll: CGFloat = 1.42
     static let sceneSize = CGSize(width: 844, height: 390)
 }
 
@@ -542,7 +702,7 @@ private final class Hazard {
         kind = spawn.kind
         worldX = spawn.distance
         width = spawn.width
-        let built = HazardVisual.make(kind: spawn.kind, width: spawn.width)
+        let built = HazardVisual.make(kind: spawn.kind, width: spawn.width, seed: spawn.distance)
         node = built.node
         pole = built.pole
         node.position = CGPoint(x: -400, y: 0)
@@ -556,7 +716,8 @@ private final class Hazard {
         case .stack:
             return CGRect(x: left, y: Stage.groundY, width: width, height: 64)
         case .enemy:
-            return CGRect(x: left, y: Stage.groundY, width: width, height: 32)
+            let hop = abs(CGFloat(sin(time * 8 + Double(worldX) * 0.015))) * 9
+            return CGRect(x: left, y: Stage.groundY + hop, width: width, height: 20)
         case .rail:
             // Opening is below ground + 22. The slab continues above a jump,
             // so a jump always overlaps it and a roll always clears it.
@@ -572,14 +733,14 @@ private final class Hazard {
 }
 
 private enum HazardVisual {
-    static func make(kind: ObstacleKind, width: CGFloat) -> (node: SKNode, pole: SKNode?) {
+    static func make(kind: ObstacleKind, width: CGFloat, seed: CGFloat) -> (node: SKNode, pole: SKNode?) {
         switch kind {
         case .crate:
             return (box(width: width, height: 34, stacked: false), nil)
         case .stack:
             return (box(width: width, height: 64, stacked: true), nil)
         case .enemy:
-            return (enemy(width: width), nil)
+            return (quadruped(width: width, variant: Int(seed / 48) % 3), nil)
         case .rail:
             return (shutter(width: width), nil)
         case .gap:
@@ -610,23 +771,65 @@ private enum HazardVisual {
         return node
     }
 
-    private static func enemy(width: CGFloat) -> SKNode {
+    private static func quadruped(width: CGFloat, variant: Int) -> SKNode {
         let node = SKNode()
-        let torso = SKShapeNode(rectOf: CGSize(width: max(14, width * 0.72), height: 20), cornerRadius: 4)
-        torso.fillColor = SKColor(red: 0.62, green: 0.18, blue: 0.16, alpha: 1)
-        torso.strokeColor = .clear
-        torso.position = CGPoint(x: 0, y: -4)
-        let head = SKShapeNode(circleOfRadius: 5.5)
-        head.fillColor = SKColor(red: 0.82, green: 0.28, blue: 0.22, alpha: 1)
+        let bodyColor: SKColor
+        let accent: SKColor
+        switch variant {
+        case 0:
+            bodyColor = SKColor(red: 0.76, green: 0.62, blue: 0.42, alpha: 1)
+            accent = SKColor(red: 0.55, green: 0.40, blue: 0.26, alpha: 1)
+        case 1:
+            bodyColor = SKColor(red: 0.46, green: 0.49, blue: 0.54, alpha: 1)
+            accent = SKColor(red: 0.24, green: 0.26, blue: 0.30, alpha: 1)
+        default:
+            bodyColor = SKColor(red: 0.38, green: 0.25, blue: 0.16, alpha: 1)
+            accent = SKColor(red: 0.20, green: 0.13, blue: 0.09, alpha: 1)
+        }
+        let bodyW = max(28, width * 0.82)
+        let body = SKShapeNode(ellipseOf: CGSize(width: bodyW, height: 13))
+        body.fillColor = bodyColor
+        body.strokeColor = .clear
+        body.position = CGPoint(x: -2, y: 0)
+        node.addChild(body)
+
+        func leg(_ x: CGFloat, name: String) -> SKShapeNode {
+            let limb = SKShapeNode(rectOf: CGSize(width: 3, height: 9), cornerRadius: 1)
+            limb.fillColor = accent
+            limb.strokeColor = .clear
+            limb.position = CGPoint(x: x, y: -7)
+            limb.name = name
+            return limb
+        }
+        node.addChild(leg(-bodyW * 0.30, name: "hind"))
+        node.addChild(leg(-bodyW * 0.08, name: "hind2"))
+        node.addChild(leg(bodyW * 0.16, name: "front"))
+        node.addChild(leg(bodyW * 0.34, name: "front2"))
+
+        let headRadius: CGFloat = variant == 2 ? 6.5 : 5
+        let head = SKShapeNode(circleOfRadius: headRadius)
+        head.fillColor = bodyColor
         head.strokeColor = .clear
-        head.position = CGPoint(x: 2, y: 10)
-        let visor = SKShapeNode(rectOf: CGSize(width: 7, height: 2), cornerRadius: 1)
-        visor.fillColor = Palette.sodium
-        visor.strokeColor = .clear
-        visor.position = CGPoint(x: 1, y: 0)
-        head.addChild(visor)
-        node.addChild(torso)
+        head.position = CGPoint(x: bodyW * 0.40, y: variant == 2 ? 1 : 2)
         node.addChild(head)
+
+        if variant == 0 {
+            let leftEar = SKShapeNode(ellipseOf: CGSize(width: 3, height: 9))
+            leftEar.fillColor = accent
+            leftEar.strokeColor = .clear
+            leftEar.position = CGPoint(x: -2, y: 6)
+            head.addChild(leftEar)
+            let rightEar = SKShapeNode(ellipseOf: CGSize(width: 3, height: 9))
+            rightEar.fillColor = accent
+            rightEar.strokeColor = .clear
+            rightEar.position = CGPoint(x: 2, y: 6)
+            head.addChild(rightEar)
+        }
+        let snout = SKShapeNode(ellipseOf: CGSize(width: variant == 1 ? 8 : 5, height: 3.5))
+        snout.fillColor = accent
+        snout.strokeColor = .clear
+        snout.position = CGPoint(x: headRadius * 0.7, y: -1)
+        head.addChild(snout)
         return node
     }
 

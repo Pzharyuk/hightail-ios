@@ -13,29 +13,39 @@ final class GameModel: ObservableObject {
     @Published var lives = 3
     @Published var progress: CGFloat = 0
     @Published var unlocked: Int
+    @Published var score = 0
+    @Published var best: Int
     @Published var runID = UUID()
 
     private let unlockKey = "hightail.unlocked"
+    private let bestKey = "hightail.best"
 
     init() {
         let stored = UserDefaults.standard.integer(forKey: "hightail.unlocked")
         unlocked = stored == 0 ? 1 : min(LevelCatalog.count, max(1, stored))
+        best = UserDefaults.standard.integer(forKey: "hightail.best")
     }
 
     var stretch: Stretch { LevelCatalog.stretch(stretchIndex) }
 
-    func start(_ index: Int) {
+    func start(_ index: Int, keepScore: Bool = false) {
         guard index >= 1, index <= unlocked else { return }
         stretchIndex = index
         lives = 3
         progress = 0
+        if !keepScore { score = 0 }
         runID = UUID()
         phase = .playing
     }
 
-    func note(progress: CGFloat, lives: Int) {
+    func note(progress: CGFloat, lives: Int, score: Int) {
         self.progress = progress
         self.lives = lives
+        self.score = score
+        if score > best {
+            best = score
+            UserDefaults.standard.set(best, forKey: bestKey)
+        }
     }
 
     func didClear() {
@@ -55,11 +65,11 @@ final class GameModel: ObservableObject {
     }
 
     func retry() {
-        start(stretchIndex)
+        start(stretchIndex, keepScore: true)
     }
 
     func next() {
-        start(stretchIndex + 1)
+        start(stretchIndex + 1, keepScore: true)
     }
 
     func toMap() {
@@ -133,9 +143,14 @@ private struct MapScreen: View {
                         .background(Color.escape, in: Capsule())
                 }
                 .buttonStyle(.plain)
-                Text("Tap the top half to jump. Tap the bottom half to roll. A roll knocks a guy down.")
+                Text("Tap the top half to jump. Hold it for a higher one, or tap again in the air. Hold the bottom half to roll. Jump on an animal for points. A fast roll pays more.")
                     .font(.system(size: 13, weight: .medium, design: .rounded))
                     .foregroundStyle(Color.ivory.opacity(0.5))
+                if model.best > 0 {
+                    Text("Best \(model.best)")
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color.sodium.opacity(0.85))
+                }
             }
             .frame(maxWidth: 340, alignment: .leading)
 
@@ -222,9 +237,15 @@ private struct PlaySession: View {
         rollHaptic.prepare()
         knockHaptic.prepare()
         let next = GameScene(stretch: model.stretch)
-        next.onProgress = { progress, lives in
+        next.restoreScore(model.score)
+        next.onProgress = { progress, lives, score in
             DispatchQueue.main.async {
-                model.note(progress: progress, lives: lives)
+                model.note(progress: progress, lives: lives, score: score)
+            }
+        }
+        next.onScore = { score in
+            DispatchQueue.main.async {
+                model.note(progress: model.progress, lives: model.lives, score: score)
             }
         }
         next.onJump = { jumpHaptic.impactOccurred() }
@@ -242,21 +263,21 @@ private struct PlaySession: View {
     }
 
     private func gesture(_ scene: GameScene, height: CGFloat) -> some Gesture {
-        DragGesture(minimumDistance: 0).onEnded { value in
-            if value.location.y < height * 0.5 {
-                scene.jump()
-            } else {
-                scene.roll()
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                scene.beginTouch(jumpZone: value.startLocation.y < height * 0.5)
             }
-        }
+            .onEnded { _ in
+                scene.endTouch()
+            }
     }
 
     private var zoneLabels: some View {
         VStack {
-            Text("JUMP")
+            Text("HOLD TO JUMP")
                 .padding(.top, 34)
             Spacer()
-            Text(model.stretch.index >= 5 ? "ROLL  ·  KNOCKS THEM DOWN" : "ROLL")
+            Text("HOLD TO ROLL")
                 .padding(.bottom, 16)
         }
         .font(.system(size: 11, weight: .bold, design: .rounded))
@@ -279,6 +300,10 @@ private struct PlaySession: View {
                 }
                 .allowsHitTesting(false)
                 Spacer()
+                Text("\(model.score)")
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.ivory)
+                    .allowsHitTesting(false)
                 HStack(spacing: 6) {
                     ForEach(0..<3, id: \.self) { index in
                         Circle()
